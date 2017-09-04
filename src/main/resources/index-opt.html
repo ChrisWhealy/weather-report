@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example Scala.js application</title>
+    <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous" />
+</head>
+<body style="margin: 0px" onload="com.sap.demo.WeatherReport().main(document.getElementById('weatherDiv'))">
+
+<div id="weatherDiv"></div>
+
+<script type="text/javascript" src="../weatherreport-opt.js"></script>
+<script type="text/javascript" src="/workbench.js"></script>
+<script>
+    com.sap.demo.WeatherReport().main(document.getElementById('weatherDiv'));
+</script>
+</body>
+</html>

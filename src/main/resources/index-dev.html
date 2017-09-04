@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather Report</title>
+  <META HTTP-EQUIV="cache-control" CONTENT="no-cache">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.2/leaflet.css" />
+</head>
+
+<body style="margin: 1rem">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.2/leaflet.js"></script>
+
+<div id="weatherDiv"></div>
+
+<script type="text/javascript" src="../weatherreport-fastopt.js"></script>
+<script type="text/javascript" src="/workbench.js"></script>
+<script>
+    com.sap.demo.WeatherReport().main(document.getElementById('weatherDiv'));
+</script>
+</body>
+</html>
