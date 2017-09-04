@@ -29,7 +29,7 @@ object WeatherReport {
     "q"      -> "",
     "type"   -> "like",
     "mode"   -> "json",
-    "apikey" -> "9ff16c79edd6ad12396c22ed8a7996ec"
+    "apikey" -> "Enter your API Key here"
   )
 
   var tzdbQueryParams = scala.collection.mutable.Map(
