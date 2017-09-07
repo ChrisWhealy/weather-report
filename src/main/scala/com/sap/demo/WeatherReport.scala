@@ -29,7 +29,7 @@ object WeatherReport {
     "q"      -> "",
     "type"   -> "like",
     "mode"   -> "json",
-    "apikey" -> "Enter your API Key here"
+    "apikey" -> ""
   )
 
   var tzdbQueryParams = scala.collection.mutable.Map(
@@ -354,9 +354,11 @@ object WeatherReport {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     container.appendChild(
       div(
-        h1("Weather"),
+        h1("Weather Report"),
+        p("Before using this weather report app, please create an account on OpenWeatherMap.org and then create yourself an API Key."),
+        p("Once you have an API Key, paste it into the field below and you will then be able to see weather reports."),
         table(
-          tr(td("API Key for OpenWeather interface"), td(apiKeyInput)),
+          tr(td("Your OpenWeatherMap API Key"), td(apiKeyInput)),
           tr(td("Enter a city name (min 4 characters)"), td(cityNameInput)),
           tr(td(), td(style := "text-align: right", btn))
         ),
