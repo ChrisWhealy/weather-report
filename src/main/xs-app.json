@@ -1,0 +1,9 @@
+{
+  "welcomeFile": "index.html",
+  "routes": [
+    {
+    "source": "^/(.*)",
+    "localDir": "target/scala-2.11/classes/"
+    }
+  ]
+}
