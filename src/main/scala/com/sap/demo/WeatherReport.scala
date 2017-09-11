@@ -276,7 +276,8 @@ object WeatherReport {
     btn.onclick = (e: dom.Event) => {
       weatherDiv.innerHTML = ""
 
-      owmQueryParams += ("q" -> cityNameInput.value)
+      owmQueryParams += ("apikey" -> apiKeyInput.value)
+      owmQueryParams += ("q"      -> cityNameInput.value)
 
       val queryStr = (
         for (p <- owmQueryParams.keys)
@@ -319,7 +320,8 @@ object WeatherReport {
       if (cityNameInput.value.length > 3) {
         weatherDiv.innerHTML = ""
 
-        owmQueryParams += ("q" -> cityNameInput.value)
+        owmQueryParams += ("apikey" -> apiKeyInput.value)
+        owmQueryParams += ("q"      -> cityNameInput.value)
 
         val queryStr = (
           for (p <- owmQueryParams.keys)
