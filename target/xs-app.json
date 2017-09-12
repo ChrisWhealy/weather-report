@@ -1,0 +1,10 @@
+{
+  "welcomeFile": "classes/index-opt.html",
+  "routes": [
+    {
+      "source": "^/(.*)",
+      "localDir": "scala-2.11",
+      "authenticationType": "none"
+    }
+  ]
+}

@@ -4,147 +4,17 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 
-import java.time._
-
 import com.felstar.scalajs.leaflet._
 
 import scalatags.JsDom.all._
 
 @JSExport
 object WeatherReport {
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // OpenWeather endpoint details
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def openWeatherMapHost = "http://api.openweathermap.org"
-  def openStreetMapHost  = "https://www.openstreetmap.org"
-  def timeZoneDbHost     = "http://api.timezonedb.com"
-  def mapBoxHost         = "https://api.tiles.mapbox.com"
-
-  def weatherEndpoint    = openWeatherMapHost + "/data/2.5/weather"
-  def searchEndpoint     = openWeatherMapHost + "/data/2.5/find"
-  def timeZoneDbEndpoint = timeZoneDbHost + "/v2/get-time-zone"
-  def mapBoxEndpoint     = mapBoxHost + "/v4/{id}/{z}/{x}/{y}.png"
-
-  var owmQueryParams = scala.collection.mutable.Map(
-    "q"      -> "",
-    "type"   -> "like",
-    "mode"   -> "json",
-    "apikey" -> ""
-  )
-
-  var tzdbQueryParams = scala.collection.mutable.Map(
-    "key"    -> "O0D5JNRE19JS",
-    "format" -> "json",
-    "by"     -> "position"
-  )
-
-  var mbQueryParams = scala.collection.mutable.Map(
-    "access_token" -> "pk.eyJ1IjoiZmFuY2VsbHUiLCJhIjoiY2oxMHRzZm5zMDAyMDMycndyaTZyYnp6NSJ9.AJ3owakJtFAJaaRuYB7Ukw"
-  )
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Various text string constants
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def months = Array(
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  )
-
-  def ordinalTxt = Array("th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th")
-
-  def compassPoints = Array(
-    "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
-  )
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Various string formatting functions
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-  // All times returned from OpenWeather are simply UTC time stamps
-  // This does not include any time zone information!
-  def utcToDateStr(utc: Long): String = {
-    if (utc == 0)
-      "Not available"
-    else {
-      var d = Instant.ofEpochSecond(utc).toString
-
-      var year = d.substring(0, 4)
-      var month = d.substring(5, 7)
-      var day = d.substring(8, 10)
-      var tempus = d.substring(11, 19)
-
-      s"$tempus on ${months(month.toInt)} ${day}${ordinalTxt(day.toInt % 10)}, $year"
-    }
-  }
-
-  // A temperatures are returned in degree Kelvin
-  def kelvinToDegStr(k: Double, min: Double, max: Double):String = {
-    val variation = (max - min) / 2
-    (k - 272.15).toInt + "˚C" + (if (variation > 0) s" ±${variation}˚C" else "")
-  }
-
-  // The weather conditions text string is all lowercase.  Convert to
-  // sentence case
-  def formatCoords(lat: Double, lon: Double): String = {
-    val latStr = s"${Math.abs(lat)}˚${if (lat >= 0) "N" else "S"}"
-    val lonStr = s"${Math.abs(lon)}˚${if (lon >= 0) "E" else "W"}"
-
-    s"$latStr, $lonStr"
-  }
-
-  // The weather conditions text string is all lowercase.  Convert to
-  // sentence case
-  def formatDescription(d: String): String = {
-    val (head, tail) = d.splitAt(1)
-    head.toUpperCase + tail
-  }
-
-  // Convert the wind direction heading in degrees to the nearest compass point
-  def formatHeading(h: Double): String = {
-    val upper = Math.floor((h + 12.25) / 22.5).toInt % 16
-    val lower = Math.floor((h - 12.25) / 22.5).toInt % 16
-
-    h + s"˚ (${compassPoints(Math.max(upper,lower))})"
-  }
-
-  // Visibility information is not always supplied
-  def formatVisibility(v: Int): String = if (v == 0) "Not available" else v + "m"
-
-  // Convert weather icon code into an actual image
-  def formatIcon(id: String) = img(src:=s"http://openweathermap.org/img/w/$id.png")
-
-  def formatVelocity(v: Double): String   = v + "m/s"
-  def formatPercentage(p: Double): String = p + "%"
-  def formatPressure(p: Double): String   = p + " mBar"
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Convert UTC time from a given lat/lon into a time in the local timezone
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def getTimeZoneFromLatLon(lat: Double, lon: Double, utc: Long): Unit = {
-    tzdbQueryParams += ("lat" -> lat.toString, "lng" -> lon.toString, "time" -> utc.toString)
-
-    val queryStr = (
-      for (p <- tzdbQueryParams.keys)
-        yield s"$p=${tzdbQueryParams.get(p).get}"
-      ).mkString("?", "&", "")
-
-    val xhr = new dom.XMLHttpRequest
-    xhr.open("GET", timeZoneDbEndpoint + queryStr)
-
-    xhr.onload = (e: dom.Event) => {
-      val data = js.JSON.parse(xhr.responseText)
-
-      println(s"TimeZoneDB JSON response = ${xhr.responseText}")
-    }
-
-    // Send XHR request to TimeZoneDB.com
-    xhr.send()
-  }
+  import Utils._
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Create a slippy map of the current city and as a side-effect, directly
-  // updates the DOM element received as a parameter
+  // update the DOM element received as parameter mapDiv
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   def buildSlippyMap(mapDiv: String, report: WeatherReportBuilder): Unit = {
     //println(s"Building map container $mapDiv")
@@ -155,18 +25,20 @@ object WeatherReport {
     // Centre the map on the city's coordinates with a default zoom level of 12
     // Then place the slippy map inside the just-created div called mapDiv
     val mapOpts = LMapOptions.zoom(12).center((report.coord.lat, report.coord.lon))
-    val map     = L.map(mapDiv, mapOpts)
+    val map = L.map(mapDiv, mapOpts)
 
-    val queryStr = (for (p <- mbQueryParams.keys)
-      yield s"$p=${mbQueryParams.get(p).get}"
-    ).mkString("?", "&", "")
+    val queryStr = (
+      for (p <- mbQueryParams.keys)
+        yield s"$p=${mbQueryParams.get(p).get}"
+      ).mkString("?", "&", "")
 
     val tileLayer = L.tileLayer(
       mapBoxEndpoint + queryStr,
       TileLayerOptions.
         id("mapbox.streets").
         maxZoom(19).
-        attribution("""Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,
+        attribution(
+          """Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,
                       |<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>,
                       |Imagery © <a href="http://mapbox.com">Mapbox</a>""".stripMargin)
     )
@@ -219,13 +91,13 @@ object WeatherReport {
             rowspan := 999,
             div(
               id := s"mapDiv$counter",
-              style := "float: right; width: 400px; height: 400px; margin: 0.5rem; margin-right: 0rem"
+              style := "float: right; width: 500px; height: 500px; margin: 0.5rem; margin-right: 0rem"
             )
           )
         ),
 
-// tr(td("Sunrise"), td(utcToDateStr(report.weatherSys.sunrise))),
-// tr(td("Sunset"),  td(utcToDateStr(report.weatherSys.sunset))),
+        // tr(td("Sunrise"), td(utcToDateStr(report.weatherSys.sunrise))),
+        // tr(td("Sunset"),  td(utcToDateStr(report.weatherSys.sunset))),
 
         // If ground level and sea level pressures are not available
         // use the general atmospheric pressure
@@ -234,16 +106,20 @@ object WeatherReport {
         else {
           Seq(
             tr(td("Atmospheric Pressure (Ground Level)"), td(formatPressure(report.main.grnd_level))),
-            tr(td("Atmospheric Pressure (Sea Level)"), td(formatPressure(report.main.sea_level)))
+            tr(td("Atmospheric Pressure (Sea Level)"),    td(formatPressure(report.main.sea_level)))
           )
         },
 
-        tr(td("Humidity"),          td(formatPercentage(report.main.humidity))),
-        tr(td("Visibility"),        td(formatVisibility(report.visibility))),
-        tr(td("Wind speed"),        td(formatVelocity(report.wind.speed))),
-        tr(td("Wind direction"),    td(formatHeading(report.wind.heading))),
-        tr(td("Cloud cover"),       td(formatPercentage(report.clouds))),
-// tr(td("Readings taken at"), td(utcToDateStr(report.measuredAt))),
+        tr(td("Humidity"), td(formatPercentage(report.main.humidity))),
+
+        if (report.visibility > 0)
+          tr(td("Visibility"), td(formatVisibility(report.visibility)))
+        else {},
+
+        tr(td("Wind speed"),     td(formatVelocity(report.wind.speed))),
+        tr(td("Wind direction"), td(formatHeading(report.wind.heading))),
+        tr(td("Cloud cover"),    td(formatPercentage(report.clouds))),
+        // tr(td("Readings taken at"), td(utcToDateStr(report.measuredAt))),
 
         for (weather <- report.weatherConditions)
           yield Seq(
@@ -255,100 +131,93 @@ object WeatherReport {
   }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Generic event handler for UI control events
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  val eventHandler = (userInput: dom.html.Input, responseDiv: dom.Element, targetEndpoint: String, responseHandler: Function3[dom.XMLHttpRequest, dom.Element, dom.html.Input, Function1[ dom.Event, _]]) =>
+    (e: dom.Event) => {
+      // The city name must be at least 4 characters long
+      if (userInput.value.length > 3) {
+        // Start from an empty DIV
+        responseDiv.innerHTML = ""
+        responseDiv.render
+
+        val xhr = buildXhrRequest(userInput.value, targetEndpoint)
+
+        // Add response event handler and send XHR request
+        xhr.onload = responseHandler(xhr, responseDiv, userInput)
+        xhr.send()
+      }
+    }
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Handler for response to a general search for cities starting with the
+  // user input string
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  val keystrokeResponseHandler = (xhrResponse: dom.XMLHttpRequest, responseDiv: dom.Element, userInput: dom.html.Input) =>
+    (e: dom.Event) => {
+      val data: js.Dynamic = js.JSON.parse(xhrResponse.responseText)
+
+      // Can any cities be found?
+      if (data.count == 0)
+      // Nope, so show error message
+        responseDiv.appendChild(p(s"Cannot find any city names starting with ${userInput.value}").render)
+      else {
+        // Build a list of weather reports
+        buildSearchList(data, responseDiv)
+      }
+    }
+
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Handler for response to searching for a specific city
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  val buttonPushResponseHandler = (xhr: dom.XMLHttpRequest, responseDiv: dom.Element, userInput: dom.html.Input) =>
+    (e: dom.Event) => {
+      val data = js.JSON.parse(xhr.responseText)
+
+      // Can the city be found?
+      if (data.cod == "404")
+      // Nope, so show error message
+        responseDiv.appendChild(p(s"City ${userInput.value} not found").render)
+      else {
+        // Yup, so add the div containing the weather information and then add
+        // an empty div that will hold the slippy map.
+        // This is needed because Leaflet needs to write its map information
+        // into an existing DOM element
+        val report = new WeatherReportBuilder(data)
+        responseDiv.appendChild(buildWeatherReport(report, 0))
+
+        buildSlippyMap("mapDiv0", report)
+      }
+    }
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Main program
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   @JSExport
   def main(container: dom.html.Div): Unit = {
     container.innerHTML = ""
 
-    val apiKeyInput   = input.render
-    val cityNameInput = input.render
-    val btn           = button.render
-    val weatherDiv    = div.render
+    val cityNameInput          = input.render
+    cityNameInput.placeholder  = "Enter a city name"
 
-    cityNameInput.defaultValue = owmQueryParams.get("q").get
-    apiKeyInput.defaultValue   = owmQueryParams.get("apikey").get
-    btn.textContent            = "Go"
+    val btn         = button.render
+    btn.textContent = "Go"
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // Button onclick event handler
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    btn.onclick = (e: dom.Event) => {
-      weatherDiv.innerHTML = ""
+    val weatherDiv = div.render
 
-      owmQueryParams += ("apikey" -> apiKeyInput.value)
-      owmQueryParams += ("q"      -> cityNameInput.value)
-
-      val queryStr = (
-        for (p <- owmQueryParams.keys)
-          yield s"$p=${owmQueryParams.get(p).get}"
-        ).mkString("?", "&", "")
-
-      val xhr = new dom.XMLHttpRequest
-      xhr.open("GET", weatherEndpoint + queryStr)
-
-      xhr.onload = (e: dom.Event) => {
-        val data = js.JSON.parse(xhr.responseText)
-
-//        println(s"JSON response = ${xhr.responseText}")
-
-        // Can the city be found?
-        if (data.cod == "404")
-          // Nope, so show error message
-          weatherDiv.appendChild(p(s"City ${cityNameInput.value} not found").render)
-        else {
-          // So first add the div containing both the weather information
-          // and the empty div that will hold the slippy map.
-          // This is needed because Leaflet writes the map information to an
-          // existing DOM element
-          val report = new WeatherReportBuilder(data)
-          weatherDiv.appendChild(buildWeatherReport(report, 0))
-
-          buildSlippyMap("mapDiv0", report)
-        }
-      }
-
-      // Send XHR request to OpenWeather
-      xhr.send()
-    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    // Input field onkeyup event handler
+    // Check for missing API Key.
+    // This check assumes that all OpenWeatherMap API Keys are just hex strings
+    // As long as an API Key is present, assign button onclick and input field
+    // onkeyup event handlers to the UI controls
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    cityNameInput.onkeyup = (e: dom.Event) => {
-      // The city name must be at least 4 characters long
-      if (cityNameInput.value.length > 3) {
-        weatherDiv.innerHTML = ""
+    def apiKeyPresent = isHexStr(owmQueryParams.get("apikey").get)
 
-        owmQueryParams += ("apikey" -> apiKeyInput.value)
-        owmQueryParams += ("q"      -> cityNameInput.value)
-
-        val queryStr = (
-          for (p <- owmQueryParams.keys)
-            yield s"$p=${owmQueryParams.get(p).get}"
-          ).mkString("?", "&", "")
-
-        val xhr = new dom.XMLHttpRequest
-        xhr.open("GET", searchEndpoint + queryStr)
-
-        xhr.onload = (e: dom.Event) => {
-          val data: js.Dynamic = js.JSON.parse(xhr.responseText)
-
-//          println(s"JSON response = ${xhr.responseText}")
-
-          // Can any cities be found?
-          if (data.count == 0)
-          // Nope, so show error message
-            weatherDiv.appendChild(p(s"Cannot find any city names starting with ${cityNameInput.value}").render)
-          else {
-            // Build a list of weather reports
-            buildSearchList(data, weatherDiv)
-          }
-        }
-
-        // Send XHR request to OpenWeather
-        xhr.send()
-      }
+    if (apiKeyPresent) {
+      btn.onclick           = eventHandler(cityNameInput, weatherDiv, weatherEndpoint, buttonPushResponseHandler)
+      cityNameInput.onkeyup = eventHandler(cityNameInput, weatherDiv, searchEndpoint,  keystrokeResponseHandler)
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -357,10 +226,10 @@ object WeatherReport {
     container.appendChild(
       div(
         h1("Weather Report"),
-        p("Before using this weather report app, please create an account on OpenWeatherMap.org and then create yourself an API Key."),
-        p("Once you have an API Key, paste it into the field below and you will then be able to see weather reports."),
         table(
-          tr(td("Your OpenWeatherMap API Key"), td(apiKeyInput)),
+          if (!apiKeyPresent)
+            tr(td(colspan := "3", style := "color:red;", "Please edit the source of Utils.scala and add your own OpenWeatherMap API key", br, "This app cannot function without this value."))
+          else {},
           tr(td("Enter a city name (min 4 characters)"), td(cityNameInput)),
           tr(td(), td(style := "text-align: right", btn))
         ),

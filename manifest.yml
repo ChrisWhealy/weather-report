@@ -2,20 +2,10 @@
 applications:
 - name: weather-report
   host: i003638-weather-report
-  memory: 256M
-  instances: 1
-  path: target/scala-2.11/weatherreport_sjs0.6_2.11-0.1-SNAPSHOT.jar
-  buildpack: java_buildpack
-
-- name: approuter
-  host: approuter-i003638
-  path: src/main/approuter
+  domain: cfapps.sap.hana.ondemand.com
   buildpack: nodejs_buildpack
   memory: 128M
+  path: target
   env:
-    XSAPPNAME: weather-report
-    TENANT_HOST_PATTERN: "^(.*)-approuter-i003638.cfapps.sap.hana.ondemand.com"
-    destinations: >
-      [
-        { "name":"weather-report", "url":"https://i003638-weather-report.cfapps.sap.hana.ondemand.com", "forwardAuthToken": true }
-      ]
+    TENANT_HOST_PATTERN: ^(.*)-weather-report.cfapps.sap.hana.ondemand.com
+

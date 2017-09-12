@@ -1,5 +1,5 @@
 {
-  "name": "weather-report",
+  "name": "weather-report-approuter",
   "dependencies": {
     "@sap/approuter": "2.10.0"
   },
