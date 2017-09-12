@@ -14,7 +14,7 @@ This weather report application accesses OpenWeatherMap.org to obtain the curren
     1. Edit the `domain` value to point to the data centre in which your account is located
     1. Edit the end of the `TENANT_HOST_PATTERN` value to match the domain name of your data centre
 1. From the command line, change into the `target` directory.
-1. Even if you are connected to the corporate network, switch off the shell environment variables used by `npm`.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will hang.
+1. Even if you are connected to the corporate network, switch off the shell environment variables used by `npm`.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will probably hang.
 1. Run `npm install` to install the required node modules into the target directory
 1. Change up one level into the directory containing the `manifest.yml` file
 1. `cf login` to your Cloud Foundry account
