@@ -1,5 +1,7 @@
 # Weather Report App based on ScalaJS
 
+![Weather Report](./src/main/resources/WeatherReport.png)
+
 This weather report application accesses OpenWeatherMap.org to obtain the current weather information for whatever city (or cities) match your input value.
 
 # Setup Instructions
