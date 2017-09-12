@@ -1,11 +1,11 @@
 ---
 applications:
 - name: weather-report
-  host: i003638-weather-report
-  domain: cfapps.sap.hana.ondemand.com
+  host: <your_userid>-weather-report
+  domain: <domain_of_your_cf_data_centre>
   buildpack: nodejs_buildpack
   memory: 128M
   path: target
   env:
-    TENANT_HOST_PATTERN: ^(.*)-weather-report.cfapps.sap.hana.ondemand.com
+    TENANT_HOST_PATTERN: ^(.*)-weather-report.<domain_of_your_cf_data_centre>
 
