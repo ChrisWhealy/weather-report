@@ -21,7 +21,9 @@ If this is not the case, then please visit <https://account.hanatrial.ondemand.c
     1. The `domain` value has been preconfigured to point to Europe (Frankfurt) Cloud Foundry system (`eu10` is the part of the domain name that determines the data centre)
     1. The last part of the domain name used in the `TENANT_HOST_PATTERN` value must match the domain name used in the `domain` field
 1. From the command line, change into this repo's `target` directory.
-1. Even if you are connected to the corporate network, switch off the shell environment variables used by `npm`.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will probably hang.
+1. Even if you are connected to the corporate network, configure `npm` ***not*** to use a proxy server.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will probably hang.
+    * This is done by issuing the commands `npm config delete proxy` and `npm config delete https-proxy`
+    * To switch `npm` proxy configuration back on, issue the commands `npm config set proxy http://proxy:8080` and `npm config set https-proxy http://proxy:8080` 
 1. Run `npm install` to install the required node modules into the target directory
 1. Change up one level into the directory containing the `manifest.yml` file
 1. `cf login` to your Cloud Foundry account
