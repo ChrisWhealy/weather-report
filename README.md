@@ -5,17 +5,20 @@
 This weather report application accesses OpenWeatherMap.org to obtain the current weather information for whatever city (or cities) match your input value.
 
 # Assumptions
-In order to publish this app to Cloud Foundry, it is assumed that you already have an account on the Europe (Frankfurt) trial system.
 
-If this is not the case, then please visit <https://account.hanatrial.ondemand.com> and click on the button labelled "Go to Cloud Foundry Trial".  This will set up a new account for you and then take you the dashboard for that new account.
+1. You have a working Scala development environment installed on your machine.  The exact IDE you use is not important, but it is important that you use `sbt` to build Scala applications.
 
-![Go to Cloud Foundry Trial](./src/main/resources/Cloud%20Foundry%20Home.png)
+1. In order to publish this app to Cloud Foundry, it is assumed that you already have an account on the Europe (Frankfurt) trial system.
+
+    If this is not the case, then please visit <https://account.hanatrial.ondemand.com> and click on the button labelled "Go to Cloud Foundry Trial".  This will set up a new account for you and then take you the dashboard for that new account.
+
+    ![Go to Cloud Foundry Trial](./src/main/resources/Cloud%20Foundry%20Home.png)
 
 # Setup Instructions
 
 1. Clone this repo
 1. Set up your own API Key for OpenWeatherMap.org and add this value into the source code of `Utils.scala`. (See instructions below)
-1. Recompile the app using both `fastOptJS` and `fullOptJS`.
+1. Use `sbt` to recompile the app using at least `fullOptJS`.  This is because the `target/xs-app.json` points to the fully optimized version of the Scala.Js coding.
 1. In `manifest.yml`:
     1. Edit the `host` value to point to a suitable virtual hostname for this app.  For instance, add your userid to the front of `-weather-report`.
     1. The `domain` value has been preconfigured to point to Europe (Frankfurt) Cloud Foundry system (`eu10` is the part of the domain name that determines the data centre)
