@@ -4,6 +4,13 @@
 
 This weather report application accesses OpenWeatherMap.org to obtain the current weather information for whatever city (or cities) match your input value.
 
+# Assumptions
+In order to publish this app to Cloud Foundry, it is assumed that you already have an account on the Europe (Frankfurt) trial system.
+
+If this is not the case, then please visit <https://account.hanatrial.ondemand.com> and click on the button labelled "Go to Cloud Foundry Trial".  This will set up a new account for you and then take you the dashboard for that new account.
+
+![Go to Cloud Foundry Trial](./src/main/resources/Cloud%20Foundry%20Home.png)
+
 # Setup Instructions
 
 1. Clone this repo
@@ -11,9 +18,9 @@ This weather report application accesses OpenWeatherMap.org to obtain the curren
 1. Recompile the app using both `fastOptJS` and `fullOptJS`.
 1. In `manifest.yml`:
     1. Edit the `host` value to point to a suitable virtual hostname for this app.  For instance, add your userid to the front of `-weather-report`.
-    1. Edit the `domain` value to point to the data centre in which your account is located
-    1. Edit the end of the `TENANT_HOST_PATTERN` value to match the domain name of your data centre
-1. From the command line, change into the `target` directory.
+    1. The `domain` value has been preconfigured to point to Europe (Frankfurt) Cloud Foundry system (`eu10` is the part of the domain name that determines the data centre)
+    1. The last part of the domain name used in the `TENANT_HOST_PATTERN` value must match the domain name used in the `domain` field
+1. From the command line, change into this repo's `target` directory.
 1. Even if you are connected to the corporate network, switch off the shell environment variables used by `npm`.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will probably hang.
 1. Run `npm install` to install the required node modules into the target directory
 1. Change up one level into the directory containing the `manifest.yml` file
