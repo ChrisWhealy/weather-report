@@ -2,10 +2,10 @@
 applications:
 - name: weather-report
   host: <your_userid>-weather-report
-  domain: <domain_of_your_cf_data_centre>
+  domain: cfapps.eu10.hana.ondemand.com
   buildpack: nodejs_buildpack
   memory: 128M
   path: target
   env:
-    TENANT_HOST_PATTERN: ^(.*)-weather-report.<domain_of_your_cf_data_centre>
+    TENANT_HOST_PATTERN: ^(.*)-weather-report.cfapps.eu10.hana.ondemand.com
 
