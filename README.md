@@ -20,11 +20,12 @@ This weather report application accesses OpenWeatherMap.org to obtain the curren
 1. Set up your own API Key for OpenWeatherMap.org and add this value into the source code of `Utils.scala`. (See instructions below)
 1. Use `sbt` to recompile the app using at least `fullOptJS`.  This is because the `target/xs-app.json` points to the fully optimized version of the Scala.Js coding.
 1. In `manifest.yml`:
-    1. Edit the `host` value to point to a suitable virtual hostname for this app.  For instance, add your userid to the front of `-weather-report`.
-    1. The `domain` value has been preconfigured to point to Europe (Frankfurt) Cloud Foundry system (`eu10` is the part of the domain name that determines the data centre)
-    1. The last part of the domain name used in the `TENANT_HOST_PATTERN` value must match the domain name used in the `domain` field
+    1. Edit the `host` value to point to a suitable virtual hostname for this app.  For instance, add your userid to the front of `-weather-report`
+    1. The `domain` value has been preconfigured to point to Europe (Frankfurt) Cloud Foundry system.  
+    You can find your own CF domain name from the command line by first logging in to CF using `cf login`, then entering the command `cf domains`.  If you also have an account on the Europe (Frankfurt) system, then you will not need to change the domain name.
+    1. The last part of the domain name used in the `TENANT_HOST_PATTERN` value must match the domain name used in the `domain` field.
 1. From the command line, change into this repo's `target` directory.
-1. Even if you are connected to the corporate network, configure `npm` ***not*** to use a proxy server.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following command will probably hang.
+1. Even if you are connected to the corporate network, configure `npm` ***not*** to use a proxy server.  If you don't do this, `npm` will be unable to reach SAP's Nexus server and the following `npm install` command will probably hang.
     * This is done by issuing the commands `npm config delete proxy` and `npm config delete https-proxy`
     * To switch `npm` proxy configuration back on, issue the commands `npm config set proxy http://proxy:8080` and `npm config set https-proxy http://proxy:8080` 
 1. Run `npm install` to install the required node modules into the target directory
