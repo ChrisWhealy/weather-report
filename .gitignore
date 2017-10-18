@@ -12,6 +12,12 @@ src_managed/
 project/boot/
 project/plugins/project/
 
+# NPM modules not needed
+src/main/node_modules/
+
+# IntelliJ specific
+.idea/
+
 # Scala-IDE specific
 .scala_dependencies
 .worksheet
