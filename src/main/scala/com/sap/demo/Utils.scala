@@ -30,7 +30,7 @@ object Utils {
 
   var owmQueryParams = scala.collection.mutable.Map[String,String](
     "q"      -> ""
-    ,"type"   -> "like"
+    ,"type"   -> "accurate"
     ,"mode"   -> "json"
     ,"apikey" -> "<Paste your API Key value here>"
   )

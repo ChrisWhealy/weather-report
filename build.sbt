@@ -4,9 +4,10 @@ enablePlugins(ScalaJSPlugin)
 
 workbenchSettings
 
-name := "WeatherReport"
-version := "0.1-SNAPSHOT"
+lazy val appName = "WeatherReport"
+lazy val divName = "container"
 
+version      := "0.1-SNAPSHOT"
 scalaVersion := "2.11.11"
 
 libraryDependencies ++= Seq(
@@ -19,7 +20,7 @@ libraryDependencies ++= Seq(
 jsDependencies += "org.webjars.npm" % "leaflet" % "0.7.7" / "dist/leaflet.js"
 
 // bootSnippet is used by SBT to auto-reload the web page
-bootSnippet := "com.sap.demo.WeatherReport().main(document.getElementById('weatherDiv'));"
+bootSnippet := s"com.sap.demo.${appName}().main(document.getElementById('${divName}'));"
 
 updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile)
 

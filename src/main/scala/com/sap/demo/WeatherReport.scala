@@ -11,11 +11,17 @@ import scalatags.JsDom.all._
 @JSExport
 object WeatherReport {
   import Utils._
+  import Trace._
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  def traceFlow = Trace.flow("WeatherReport")(_: String)(_: Option[Boolean])(_: Any)
+
+  def enter: Option[Boolean] = Option(true)
+  def exit:  Option[Boolean] = Option(false)
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Create a slippy map of the current city and as a side-effect, directly
   // update the DOM element received as parameter mapDiv
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   def buildSlippyMap(mapDiv: String, report: WeatherReportBuilder): Unit = {
     //println(s"Building map container $mapDiv")
 
@@ -39,8 +45,8 @@ object WeatherReport {
         maxZoom(19).
         attribution(
           """Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,
-                      |<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>,
-                      |Imagery © <a href="http://mapbox.com">Mapbox</a>""".stripMargin)
+             |<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>,
+             |Imagery © <a href="http://mapbox.com">Mapbox</a>""".stripMargin)
     )
 
     tileLayer.addTo(map)
@@ -51,9 +57,9 @@ object WeatherReport {
       .addTo(map)
   }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Build HTML weather report
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   def buildSearchList(locationList: js.Dynamic, weatherDiv: dom.Element): Unit = {
     var counter: Int = 0
 
@@ -67,33 +73,34 @@ object WeatherReport {
     }
   }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Build HTML weather report
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   def buildWeatherReport(report: WeatherReportBuilder, counter: Int): dom.Element = {
     // Call TimeZoneDB
     // getTimeZoneFromLatLon(report.coord.lat, report.coord.lon, report.measuredAt)
 
     div(
-      style := "width: 100%",
+      id := "weatherReport",
       table(
-        style := "margin: 1em; width: 95%",
+        id := "weatherReportTable",
         tr(
-          th(
-            colspan := 3,
-            style := "background-color: #EEEEEE; text-align: center; font-size: larger",
+          td(
+            colspan := 2,
+            id := "weatherReportHeading",
             s"${report.cityName}, ${report.weatherSys.country} (${formatCoords(report.coord.lat, report.coord.lon)})"
+          ),
+          td(
+            rowspan := 99,
+            div(
+              id := s"mapDiv$counter",
+              style := "float: right; width: 500px; height: 500px; margin: 0.5em; margin-bottom: 1em; margin-left: 0em;"
+            )
           )
         ),
         tr(
-          td("Temperature"), td(kelvinToDegStr(report.main.temp, report.main.temp_min, report.main.temp_max)),
-          td(
-            rowspan := 999,
-            div(
-              id := s"mapDiv$counter",
-              style := "float: right; width: 500px; height: 500px; margin: 0.5rem; margin-right: 0rem"
-            )
-          )
+          td(id := "label", "Temperature"),
+          td(kelvinToDegStr(report.main.temp, report.main.temp_min, report.main.temp_max))
         ),
 
         // tr(td("Sunrise"), td(utcToDateStr(report.weatherSys.sunrise))),
@@ -102,38 +109,45 @@ object WeatherReport {
         // If ground level and sea level pressures are not available
         // use the general atmospheric pressure
         if (report.main.grnd_level == 0)
-          tr(td("Atmospheric Pressure"), td(formatPressure(report.main.airPressure)))
+          tr(td(id := "label", "Atmospheric Pressure"), td(formatPressure(report.main.airPressure)))
         else {
           Seq(
-            tr(td("Atmospheric Pressure (Ground Level)"), td(formatPressure(report.main.grnd_level))),
-            tr(td("Atmospheric Pressure (Sea Level)"),    td(formatPressure(report.main.sea_level)))
+            tr(td(id := "label", "Atmospheric Pressure (Ground Level)"), td(formatPressure(report.main.grnd_level))),
+            tr(td(id := "label", "Atmospheric Pressure (Sea Level)"),    td(formatPressure(report.main.sea_level)))
           )
         },
 
-        tr(td("Humidity"), td(formatPercentage(report.main.humidity))),
+        tr(td(id := "label", "Humidity"), td(formatPercentage(report.main.humidity))),
 
         if (report.visibility > 0)
-          tr(td("Visibility"), td(formatVisibility(report.visibility)))
+          tr(td(id := "label", "Visibility"), td(formatVisibility(report.visibility)))
         else {},
 
-        tr(td("Wind speed"),     td(formatVelocity(report.wind.speed))),
-        tr(td("Wind direction"), td(formatHeading(report.wind.heading))),
-        tr(td("Cloud cover"),    td(formatPercentage(report.clouds))),
-        // tr(td("Readings taken at"), td(utcToDateStr(report.measuredAt))),
+        tr(td(id := "label", "Wind speed"),     td(formatVelocity(report.wind.speed))),
+        tr(td(id := "label", "Wind direction"), td(formatHeading(report.wind.heading))),
+        tr(td(id := "label", "Cloud cover"),    td(formatPercentage(report.clouds))),
+        // tr(td(id := "label", "Readings taken at"), td(utcToDateStr(report.measuredAt))),
 
         for (weather <- report.weatherConditions)
           yield Seq(
-            tr( td(style := "background: #EEEEEE", colspan := 2, s"General conditions: ${weather.main}" )),
-            tr( td("Description"), td(formatIcon(weather.icon), formatDescription(weather.desc)) )
+//            tr( td(style := "background: #EEEEEE", colspan := 2, s"General conditions: ${weather.main}" )),
+            tr(td(id := "label", formatDescription(weather.desc)), td(formatIcon(weather.icon)))
           )
       )
     ).render
   }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Generic event handler for UI control events
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  val eventHandler = (userInput: dom.html.Input, responseDiv: dom.Element, targetEndpoint: String, responseHandler: Function3[dom.XMLHttpRequest, dom.Element, dom.html.Input, Function1[ dom.Event, _]]) =>
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  val eventHandler = (userInput: dom.html.Input,
+                      responseDiv: dom.Element,
+                      targetEndpoint: String,
+                      responseHandler: Function3[dom.XMLHttpRequest,
+                        dom.Element,
+                        dom.html.Input,
+                        Function1[ dom.Event, _]]
+                     ) =>
     (e: dom.Event) => {
       // The city name must be at least 4 characters long
       if (userInput.value.length > 3) {
@@ -149,10 +163,10 @@ object WeatherReport {
       }
     }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Handler for response to a general search for cities starting with the
   // user input string
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   val keystrokeResponseHandler = (xhrResponse: dom.XMLHttpRequest, responseDiv: dom.Element, userInput: dom.html.Input) =>
     (e: dom.Event) => {
       val data: js.Dynamic = js.JSON.parse(xhrResponse.responseText)
@@ -168,9 +182,9 @@ object WeatherReport {
     }
 
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Handler for response to searching for a specific city
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   val buttonPushResponseHandler = (xhr: dom.XMLHttpRequest, responseDiv: dom.Element, userInput: dom.html.Input) =>
     (e: dom.Event) => {
       val data = js.JSON.parse(xhr.responseText)
@@ -191,51 +205,63 @@ object WeatherReport {
       }
     }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Main program
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   @JSExport
   def main(container: dom.html.Div): Unit = {
+    traceFlow("main", enter, null)
+
+    // All sections of HTML are placed inside this container
     container.innerHTML = ""
 
-    val cityNameInput          = input.render
-    cityNameInput.placeholder  = "Enter a city name"
+    val noApiKeyMsg   = "Please edit the source of Utils.scala and add your own OpenWeatherMap API key. This app cannot function without this value."
+    val hdr           = header.render
+    val weatherDiv    = div.render
+    val cityNameInput = input.render
+    val btn           = button.render
 
-    val btn         = button.render
-    btn.textContent = "Go"
+    cityNameInput.placeholder = "Your city name"
+    btn.textContent           = "Search"
 
-    val weatherDiv = div.render
-
-
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Check for missing API Key.
-    // This check assumes that all OpenWeatherMap API Keys are just hex strings
-    // As long as an API Key is present, assign button onclick and input field
-    // onkeyup event handlers to the UI controls
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // This check assumes that all OpenWeatherMap API Keys are just hex strings. As long as an API Key value is present
+    // that conforms to this assumption, then assign the button onclick and input field onkeyup event handlers to the
+    // UI controls
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def apiKeyPresent = isHexStr(owmQueryParams.get("apikey").get)
 
     if (apiKeyPresent) {
       btn.onclick           = eventHandler(cityNameInput, weatherDiv, weatherEndpoint, buttonPushResponseHandler)
+      btn.id                = "searchButton"
+
       cityNameInput.onkeyup = eventHandler(cityNameInput, weatherDiv, searchEndpoint,  keystrokeResponseHandler)
+      cityNameInput.id      = "inputField"
     }
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Write HTML to the screen
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    hdr.appendChild(h1("Weather Forecast").render)
+
+    if (!apiKeyPresent) {
+      hdr.appendChild(p(id := "noApiKey;", noApiKeyMsg).render)
+    }
+
+    // Add header and form fields to the container
+    container.appendChild(hdr)
+
     container.appendChild(
       div(
-        h1("Weather Report"),
-        table(
-          if (!apiKeyPresent)
-            tr(td(colspan := "3", style := "color:red;", "Please edit the source of Utils.scala and add your own OpenWeatherMap API key", br, "This app cannot function without this value."))
-          else {},
-          tr(td("Enter a city name (min 4 characters)"), td(cityNameInput)),
-          tr(td(), td(style := "text-align: right", btn))
-        ),
-        weatherDiv
+        id := "cityInput",
+        cityNameInput,
+        btn
       ).render
     )
+
+    // Add the weatherDiv to the container
+    traceFlow("main", exit, container.appendChild(weatherDiv).render)
   }
 }
 
