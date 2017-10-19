@@ -52,6 +52,17 @@ All API requests to OpenWeatherMap.org must contain an API Key.  Without such a 
       )
     ```
 
-   
-   
+## Behaviour of OpenWeatherMap Queries
+
+When a query is sent to OpenWeatherMap to find all cities whose names match a certain string, then sometimes you will get some strange results coming back.
+
+For instance, if you search for "**London**", the first request will not be sent until you have entered at least 4 characters - "lond".  At this point (and for reasons I cannot explain), OpenWeatherMap thinks that a place called Etu-Töölö, outside Helsinki, Finland is an accurate match for "lond"!
+
+However, as soon as you add a fifth character to the search string "londo", then you start to see cities that really match this string.
+
+During the development process, I contacted the support team at OpenWeatherMap about this, and they said "**Oh yes, it does that sometimes**"...
+
+Not much we can do about that then...
+
+
 
