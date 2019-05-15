@@ -6,7 +6,7 @@ import java.lang.{Long => JLong}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Class initialiser extracts weather data from JSON response
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-class WeatherReportBuilder(data: js.Dynamic) {
+class CityWeather(data: js.Dynamic) {
   // City coordinates
   val coord = new Coord(data.coord)
 

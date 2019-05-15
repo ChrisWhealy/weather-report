@@ -5,7 +5,7 @@ import java.time.Instant
 import org.scalajs.dom
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import scalatags.JsDom.all._
 
 @JSExport
@@ -17,31 +17,30 @@ object Utils {
   def openWeatherMapAPI  = "https://api." + openWeatherMapHost
   def openWeatherMapImg  = "https://" + openWeatherMapHost
 
-  def openStreetMapHost  = "https://www.openstreetmap.org"
-  def timeZoneDbHost     = "http://api.timezonedb.com"
-  def mapBoxHost         = "https://api.tiles.mapbox.com"
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // APIXU endpoint details
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  def apixuHost = "apixu.com"
+  def apixuAPI  = "https://api." + apixuHost
 
   def weatherEndpoint    = openWeatherMapAPI + "/data/2.5/weather"
   def searchEndpoint     = openWeatherMapAPI + "/data/2.5/find"
   def imageEndpoint      = openWeatherMapImg + "/img/w/"
 
-  def timeZoneDbEndpoint = timeZoneDbHost + "/v2/get-time-zone"
-  def mapBoxEndpoint     = mapBoxHost + "/v4/{id}/{z}/{x}/{y}.png"
 
   var owmQueryParams = scala.collection.mutable.Map[String,String](
     "q"      -> ""
     ,"type"   -> "accurate"
     ,"mode"   -> "json"
-    ,"apikey" -> "<Paste your API Key value here>"
+//    ,"apikey" -> "<Paste your API Key value here>"
+    ,"apikey" -> "9ff16c79edd6ad12396c22ed8a7996ec"
   )
 
-  var tzdbQueryParams = scala.collection.mutable.Map[String,String](
-    "key"    -> "O0D5JNRE19JS",
-    "format" -> "json",
-    "by"     -> "position"
-  )
+  def openStreetMapHost  = "https://www.openstreetmap.org"
+  def mapBoxHost         = "https://api.tiles.mapbox.com"
 
-  var mbQueryParams = scala.collection.mutable.Map[String,String](
+  def mapBoxEndpoint = mapBoxHost + "/v4/{id}/{z}/{x}/{y}.png"
+  var mbQueryParams  = scala.collection.mutable.Map[String,String](
     "access_token" -> "pk.eyJ1IjoiZmFuY2VsbHUiLCJhIjoiY2oxMHRzZm5zMDAyMDMycndyaTZyYnp6NSJ9.AJ3owakJtFAJaaRuYB7Ukw"
   )
 
@@ -58,6 +57,27 @@ object Utils {
 
   // Check if a character string is a valid hex number
   def isHexStr(s: String): Boolean = s.toLowerCase.foldLeft(true) { (acc, c) => acc && (isHexChar(c) || isNumeric(c)) }
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Calculate bounding box for a given city
+  // This is necessary because OpenWeatherMap sometimes returns multiple
+  // instances of the same city, but with slightly different coordinates(?!)
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  def toRadians(deg: Double) = deg * Math.PI / 180
+  def earthDiameter = 12742
+
+  def distance(lat1: Double, long1: Double, lat2: Double, long2: Double) = {
+    val sineHalfLatDelta = Math.sin(toRadians(lat2 - lat1) / 2)
+    val sineHalfLonDelta = Math.sin(toRadians(long2 - long1) / 2)
+
+    val a = sineHalfLatDelta * sineHalfLatDelta +
+            Math.cos(toRadians(lat1)) *
+            Math.cos(toRadians(lat2)) *
+            sineHalfLonDelta * sineHalfLonDelta
+
+    earthDiameter * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Various text string constants
@@ -95,7 +115,7 @@ object Utils {
     }
   }
 
-  // A temperatures are returned in degree Kelvin
+  // A temperatures in degrees centigrade are returned in Kelvin
   def kelvinToDegStr(k: Double, min: Double, max: Double):String = {
     val variation = (max - min) / 2
     (k - 272.15).toInt + "˚C" + (if (variation > 0) s" ±${variation}˚C" else "")
@@ -131,30 +151,6 @@ object Utils {
   def formatVelocity(v: Double): String   = v + "m/s"
   def formatPercentage(p: Double): String = p + "%"
   def formatPressure(p: Double): String   = p + " mBar"
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Convert UTC time from a given lat/lon into a time in the local timezone
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def getTimeZoneFromLatLon(lat: Double, lon: Double, utc: Long): Unit = {
-    tzdbQueryParams += ("lat" -> lat.toString, "lng" -> lon.toString, "time" -> utc.toString)
-
-    val queryStr = (
-      for (p <- tzdbQueryParams.keys)
-        yield s"$p=${tzdbQueryParams.get(p).get}"
-      ).mkString("?", "&", "")
-
-    val xhr = new dom.XMLHttpRequest
-    xhr.open("GET", timeZoneDbEndpoint + queryStr)
-
-    xhr.onload = (e: dom.Event) => {
-      val data = js.JSON.parse(xhr.responseText)
-
-      println(s"TimeZoneDB JSON response = ${xhr.responseText}")
-    }
-
-    // Send XHR request to TimeZoneDB.com
-    xhr.send()
-  }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Builds and opens an XHR request to a given endpoint

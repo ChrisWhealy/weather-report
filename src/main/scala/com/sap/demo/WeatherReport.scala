@@ -1,9 +1,8 @@
 package com.sap.demo
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import org.scalajs.dom
-
 import com.felstar.scalajs.leaflet._
 
 import scalatags.JsDom.all._
@@ -18,19 +17,23 @@ object WeatherReport {
   def enter: Option[Boolean] = Option(true)
   def exit:  Option[Boolean] = Option(false)
 
+  var cityList: List[CityWeather] = List()
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Create a slippy map of the current city and as a side-effect, directly
   // update the DOM element received as parameter mapDiv
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def buildSlippyMap(mapDiv: String, report: WeatherReportBuilder): Unit = {
+  def buildSlippyMap(mapDiv: String, city: CityWeather): Unit = {
     //println(s"Building map container $mapDiv")
 
     // Clear mapDiv contents in case the id has already been used
-    dom.document.getElementById(mapDiv).innerHTML = ""
+//    val thisMapDiv = dom.document.getElementById(mapDiv)
+//    val parent = thisMapDiv.parentNode
+//    parent.removeChild(thisMapDiv)
 
     // Centre the map on the city's coordinates with a default zoom level of 12
     // Then place the slippy map inside the just-created div called mapDiv
-    val mapOpts = LMapOptions.zoom(12).center((report.coord.lat, report.coord.lon))
+    val mapOpts = LMapOptions.zoom(12).center((city.coord.lat, city.coord.lon))
     val map = L.map(mapDiv, mapOpts)
 
     val queryStr = (
@@ -52,8 +55,8 @@ object WeatherReport {
     tileLayer.addTo(map)
 
     L.marker(
-      (report.coord.lat, report.coord.lon),
-      MarkerOptions.title(s"${report.cityName}, ${report.weatherSys.country}"))
+      (city.coord.lat, city.coord.lon),
+      MarkerOptions.title(s"${city.cityName}, ${city.weatherSys.country}"))
       .addTo(map)
   }
 
@@ -62,13 +65,27 @@ object WeatherReport {
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   def buildSearchList(locationList: js.Dynamic, weatherDiv: dom.Element): Unit = {
     var counter: Int = 0
+    var distanceThreshold = 10.0
 
     locationList.list.map {
       (data: js.Dynamic) => {
-        val report = new WeatherReportBuilder(data)
-        weatherDiv.appendChild(buildWeatherReport(report, counter))
-        buildSlippyMap(s"mapDiv$counter", report)
-        counter += 1
+        val city = new CityWeather(data)
+
+        // Is this city within 10 km of any other cities we've seen?
+        if (cityList.foldLeft(true)((acc, c) =>
+          acc && (distance(c.coord.lat, c.coord.lon, city.coord.lat, city.coord.lon) > distanceThreshold))) {
+          // Nope, so create a weather report
+          weatherDiv.appendChild(buildWeatherReport(city, counter))
+
+          buildSlippyMap(s"mapDiv$counter", city)
+          counter += 1
+
+          cityList = cityList :+ city
+        }
+        else {
+          // Yup, so treat it as a duplicate because its likely to be the same city listed twice.
+          println(s"Rejecting duplicate city ${city.cityName} located at (${city.coord.lat}, ${city.coord.lon})")
+        }
       }
     }
   }
@@ -76,7 +93,7 @@ object WeatherReport {
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Build HTML weather report
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  def buildWeatherReport(report: WeatherReportBuilder, counter: Int): dom.Element = {
+  def buildWeatherReport(city: CityWeather, counter: Int): dom.Element = {
     // Call TimeZoneDB
     // getTimeZoneFromLatLon(report.coord.lat, report.coord.lon, report.measuredAt)
 
@@ -88,7 +105,7 @@ object WeatherReport {
           td(
             colspan := 2,
             id := "weatherReportHeading",
-            s"${report.cityName}, ${report.weatherSys.country} (${formatCoords(report.coord.lat, report.coord.lon)})"
+            s"${city.cityName}, ${city.weatherSys.country} (${formatCoords(city.coord.lat, city.coord.lon)})"
           ),
           td(
             rowspan := 99,
@@ -100,7 +117,7 @@ object WeatherReport {
         ),
         tr(
           td(id := "label", "Temperature"),
-          td(kelvinToDegStr(report.main.temp, report.main.temp_min, report.main.temp_max))
+          td(kelvinToDegStr(city.main.temp, city.main.temp_min, city.main.temp_max))
         ),
 
         // tr(td("Sunrise"), td(utcToDateStr(report.weatherSys.sunrise))),
@@ -108,27 +125,27 @@ object WeatherReport {
 
         // If ground level and sea level pressures are not available
         // use the general atmospheric pressure
-        if (report.main.grnd_level == 0)
-          tr(td(id := "label", "Atmospheric Pressure"), td(formatPressure(report.main.airPressure)))
+        if (city.main.grnd_level == 0)
+          tr(td(id := "label", "Atmospheric Pressure"), td(formatPressure(city.main.airPressure)))
         else {
           Seq(
-            tr(td(id := "label", "Atmospheric Pressure (Ground Level)"), td(formatPressure(report.main.grnd_level))),
-            tr(td(id := "label", "Atmospheric Pressure (Sea Level)"),    td(formatPressure(report.main.sea_level)))
+            tr(td(id := "label", "Atmospheric Pressure (Ground Level)"), td(formatPressure(city.main.grnd_level))),
+            tr(td(id := "label", "Atmospheric Pressure (Sea Level)"),    td(formatPressure(city.main.sea_level)))
           )
         },
 
-        tr(td(id := "label", "Humidity"), td(formatPercentage(report.main.humidity))),
+        tr(td(id := "label", "Humidity"), td(formatPercentage(city.main.humidity))),
 
-        if (report.visibility > 0)
-          tr(td(id := "label", "Visibility"), td(formatVisibility(report.visibility)))
+        if (city.visibility > 0)
+          tr(td(id := "label", "Visibility"), td(formatVisibility(city.visibility)))
         else {},
 
-        tr(td(id := "label", "Wind speed"),     td(formatVelocity(report.wind.speed))),
-        tr(td(id := "label", "Wind direction"), td(formatHeading(report.wind.heading))),
-        tr(td(id := "label", "Cloud cover"),    td(formatPercentage(report.clouds))),
+        tr(td(id := "label", "Wind speed"),     td(formatVelocity(city.wind.speed))),
+        tr(td(id := "label", "Wind direction"), td(formatHeading(city.wind.heading))),
+        tr(td(id := "label", "Cloud cover"),    td(formatPercentage(city.clouds))),
         // tr(td(id := "label", "Readings taken at"), td(utcToDateStr(report.measuredAt))),
 
-        for (weather <- report.weatherConditions)
+        for (weather <- city.weatherConditions)
           yield Seq(
 //            tr( td(style := "background: #EEEEEE", colspan := 2, s"General conditions: ${weather.main}" )),
             tr(td(id := "label", formatDescription(weather.desc)), td(formatIcon(weather.icon)))
@@ -149,11 +166,14 @@ object WeatherReport {
                         Function1[ dom.Event, _]]
                      ) =>
     (e: dom.Event) => {
-      // The city name must be at least 4 characters long
-      if (userInput.value.length > 3) {
+      // The city name must be at least 3 characters long
+      if (userInput.value.length >= 3) {
         // Start from an empty DIV
         responseDiv.innerHTML = ""
         responseDiv.render
+
+        // Blank out the coordinate list
+        cityList = List()
 
         val xhr = buildXhrRequest(userInput.value, targetEndpoint)
 
@@ -175,10 +195,9 @@ object WeatherReport {
       if (data.count == 0)
       // Nope, so show error message
         responseDiv.appendChild(p(s"Cannot find any city names starting with ${userInput.value}").render)
-      else {
+      else
         // Build a list of weather reports
         buildSearchList(data, responseDiv)
-      }
     }
 
 
@@ -198,7 +217,7 @@ object WeatherReport {
         // an empty div that will hold the slippy map.
         // This is needed because Leaflet needs to write its map information
         // into an existing DOM element
-        val report = new WeatherReportBuilder(data)
+        val report = new CityWeather(data)
         responseDiv.appendChild(buildWeatherReport(report, 0))
 
         buildSlippyMap("mapDiv0", report)
@@ -246,7 +265,7 @@ object WeatherReport {
     hdr.appendChild(h1("Weather Forecast").render)
 
     if (!apiKeyPresent) {
-      hdr.appendChild(p(id := "noApiKey;", noApiKeyMsg).render)
+      hdr.appendChild(p(id := "noApiKey", noApiKeyMsg).render)
     }
 
     // Add header and form fields to the container
